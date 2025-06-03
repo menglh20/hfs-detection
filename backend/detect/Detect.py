@@ -9,6 +9,7 @@ import time
 from detect.EyeAnalyzer import EyeAnalyzer, EyeState
 from detect.MouthAnalyzer import MouthAnalyzer, MouseState
 from detect.AsymmetryAnalyzer import AsymmetryAnalyzer
+from joblib import load
 
 
 # Mediapipe的画图函数
@@ -137,3 +138,40 @@ def detect(video_path, debug=False):
         cv2.destroyAllWindows()
 
     return fps, resolution, eyeAnalyzer, mouthAnalyzer, asymmetryAnalyzer
+
+
+
+def predict(eye_twitches, mouth_twitches):
+    dt_clf_loaded = load('detect/decision_tree_model.joblib')
+
+    # feature_names = ['eye_twitches', 'mouth_twitches', 'avg_eye_twitch_range', 'max_eye_twitch_range', 'avg_mouth_twitch_range', 'max_mouth_twitch_range']
+
+    n_eye_twitches = len(eye_twitches)
+    n_mouth_twitches = len(mouth_twitches)
+    if len(eye_twitches) > 0:
+        avg_eye_twitch_range = sum(t['range'] for t in eye_twitches) / len(eye_twitches)
+        max_eye_twitch_range = max(t['range'] for t in eye_twitches)
+    else:
+        avg_eye_twitch_range = 0
+        max_eye_twitch_range = 0
+    if len(mouth_twitches) > 0:
+        avg_mouth_twitch_range = sum(t['range'] for t in mouth_twitches) / len(mouth_twitches)
+        max_mouth_twitch_range = max(t['range'] for t in mouth_twitches)
+    else:
+        avg_mouth_twitch_range = 0
+        max_mouth_twitch_range = 0
+        
+    x_input = [
+        n_eye_twitches,
+        n_mouth_twitches,
+        avg_eye_twitch_range,
+        max_eye_twitch_range,
+        avg_mouth_twitch_range,
+        max_mouth_twitch_range
+    ]
+
+    x_input_scaled = np.array(x_input).reshape(1, -1)  # 确保输入是二维的
+
+    y_pred_loaded = dt_clf_loaded.predict(x_input_scaled)
+    
+    return y_pred_loaded[0]

@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from detect.Detect import detect
+from detect.Detect import detect, predict
 from common.models import Result, User
 from django.http import JsonResponse
 import datetime
@@ -48,7 +48,9 @@ def detection(request):
 
             eye_twitches = eyeAnalyzer.analyze()
             mouth_twitches = mouthAnalyzer.analyze()
-
+            
+            # 颈扩肌抽搐检测
+            platysma_is_twitching = predict(eye_twitches, mouth_twitches) # 0 or 1
 
             detail += "检测到嘴角抽搐次数: " + str(len(mouth_twitches)) + "\n"
             avg_eye_twitch_range = 0
